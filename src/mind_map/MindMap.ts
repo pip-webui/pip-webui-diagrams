@@ -453,18 +453,462 @@
                             return d.target.y;
                         })
                         .style("opacity", 1)
-                        .attr({"marker-end": "url(#arrow)"});
+                        .attr({
+                            "marker-end": "url(#arrow)"
+                        });
                 });
 
             // Transition exiting nodes to the parent's new position.
-            link.exit().transition()
-                .remove();
+            link.exit().transition().remove();
 
             // Stash the old positions for transition.
             _.each(nodes, (d) => {
                 d.x0 = d.x;
                 d.y0 = d.y;
             });
+        }
+
+        private dblclick(d) {
+            this.removeLinkSelections();
+            d3.event['stopPropagation']();
+
+            if (d.children) {
+                d._children = d.children;
+                d.children = null;
+            } else {
+                d.children = d._children;
+                d._children = null;
+            }
+            this.update(d);
+            this.centerNode(d);
+        }
+
+        private showNodeActions(element, d) {
+            var positions = [{
+                    x: 40,
+                    y: -40
+                }, {
+                    x: 0,
+                    y: -55
+                }, {
+                    x: -40,
+                    y: -40
+                }, {
+                    x: -55,
+                    y: 0
+                }, {
+                    x: -40,
+                    y: 40
+                }, {
+                    x: 0,
+                    y: 55
+                }],
+                curElement = d3.select(element);
+
+            curElement
+                .attr('class', 'node selected')
+                .select('.input-object')
+                .attr("width", function (d) {
+                    return Math.min(d.bbox.width + 16, 250)
+                })
+                .attr("height", function (d) {
+                    return d.bbox.height + 16
+                })
+                .attr("y", -19)
+                .select('input')
+                .attr('disabled', null)
+                .style("width", function (d) {
+                    return Math.min(d.bbox.width + 16, 250) + 'px'
+                })
+                .style("height", function (d) {
+                    return (d.bbox.height + 16) + 'px'
+                });
+
+            for (var i = 0; i < 6; i++) {
+                curElement
+                    .append('circle')
+                    .attr('r', 0)
+                    .attr('actionNumber', i)
+                    .attr('class', 'goal-action')
+                    .attr('transform', function (d) {
+                        return d.userDragged ? "" : "rotate(" + (-d.treeX + 90) + ")";
+                    })
+                    .attr('cx', positions[i].x)
+                    .attr('cy', positions[i].y)
+                    .style('filter', 'url(#drop-shadow)')
+                    .on('click', (d) => {
+                        this.onNodeActionClick(d, this);
+                    })
+                    .transition()
+                    .duration(200 * (i + 1))
+                    .attr('r', 16);
+            }
+
+            d.nodeSelected = true;
+        }
+
+        private hideNodeActions(element, d) {
+            var curElement = d3.select(element);
+
+            curElement
+                .attr('class', 'node')
+                .selectAll('.goal-action')
+                .transition()
+                .duration(this.duration - 400)
+                .attr('r', 0)
+                .remove();
+
+            curElement
+                .select('.input-object')
+                .attr("y", -11)
+                .attr("width", function (d) {
+                    return Math.min(d.bbox.width + 16, 250)
+                })
+                .attr("height", function (d) {
+                    return d.bbox.height
+                })
+                .select('input')
+                .attr('disabled', true)
+                .style("width", function (d) {
+                    return Math.min(d.bbox.width + 16, 250) + 'px'
+                })
+                .style("height", function (d) {
+                    return d.bbox.height + 'px'
+                });
+
+            d.nodeSelected = false;
+        }
+
+        private click(d) {
+            this.removeLinkSelections();
+
+            if (d.dragThisTime) return;
+
+            d.clicked = !d.clicked;
+            d.clicked ? this.showNodeActions(this, d) : this.hideNodeActions(this, d);
+        }
+
+        private onNodeTextClick(d) {
+            if (d.nodeSelected) {
+                d3.event['stopPropagation']();
+            }
+        }
+
+        private removeLinkSelections() {
+            d3.selectAll('path.link')
+                .attr({
+                    "marker-end": "url(#arrow)"
+                })
+                .classed('selected', false);
+
+            d3.selectAll('.circleHead')
+                .remove();
+
+            this.selectedLink = null;
+        }
+
+        private onChangeNodeName(d) { // get target
+            //const curElement = d3.select(/*this.parentNode.parentNode*/);
+
+            const getBB = (selection) => {
+                selection.each(function (d) {
+                    d.bbox = this.getBBox();
+                })
+            }
+
+            //d.title = this.value;
+            /*
+                        curElement
+                            .select('text')
+                            .style('display', null)
+                            .text(d.title)
+                            .call(getBB)
+                            .style('display', 'none');
+
+                        curElement
+                            .select('.input-object')
+                            .transition()
+                            .duration(this.duration - 400)
+                            .attr("width", function (d) {
+                                return Math.min(d.bbox.width + 16, 250)
+                            })
+                            .select('input')
+                            .style("width", function (d) {
+                                return Math.min(d.bbox.width + 16, 250) + 'px'
+                            });*/
+        }
+
+        private onNodeActionClick(d, element) {
+            d3.event['stopPropagation']();
+
+            console.log('source: ', d);
+            console.log('action number: ', element.attributes.actionNumber.value);
+        }
+
+        private mouseoverNode(d) { // get target
+            if (this.isDragLinkHead) {
+                console.log('dragedCircle.attributes.type.value', this.dragedCircle.attributes.type.value);
+                /*
+                                if (d.id == '1' && this.dragedCircle.attributes.type.value == 'end' && this.selectedLink.__data__.source.id != '1') {
+                                    d3.select(this)
+                                        .classed("hover", true)
+                                        .classed("red", true);
+                                } else {
+                                    d3.select(this)
+                                        .classed("hover", true);
+
+                                    this.endPointOfHead.x = d.x;
+                                    this.endPointOfHead.y = d.y;
+                                    this.newNode = d;
+                                }*/
+            }
+        }
+
+        private mouseoutNode(d) { // get target
+            if (this.isDragLinkHead) {
+                //d3.select(this)
+                //    .classed("hover", false)
+                //    .classed("red", false);
+
+                this.endPointOfHead.x = null;
+                this.endPointOfHead.y = null;
+                this.newNode = null;
+            }
+        }
+
+        private dragNode(d) { // get target
+            if (d.changingName) return;
+            /*
+                        d.userDragged = true;
+                        d.dragThisTime = true;
+                        d.fx = d3.event.x;
+                        d.fy = d3.event.y;
+
+                        var toElems = d3.selectAll('.to-' + d.id)[0],
+                            fromElems = d3.selectAll('.from-' + d.id)[0],
+                            curElem = d3.select(this);
+
+                        curElem
+                            .attr('transform', 'translate(' + d.fx + ',' + d.fy + ')')
+                            .select('text')
+                            .attr('transform', null);
+
+                        curElem
+                            .select('.goal-avatar')
+                            .attr('transform', null);
+
+                        curElem
+                            .select('.substrate')
+                            .attr('transform', null);
+
+                        curElem
+                            .select('.text-substrate')
+                            .attr('transform', null);
+
+                        curElem
+                            .selectAll('.goal-action')
+                            .attr('transform', null);
+
+                        curElem
+                            .select('.input-object')
+                            .attr('transform', null);
+
+                        toElems.forEach(function (elem) {
+                            d3.select(elem)
+                                .attr('d', function () {
+                                    return line([{
+                                            x: elem.attributes.sx.value,
+                                            y: elem.attributes.sy.value
+                                        },
+                                        {
+                                            x: d.fx,
+                                            y: d.fy
+                                        }
+                                    ]);
+                                })
+                        });
+
+                        fromElems.forEach(function (elem) {
+                            d3.select(elem)
+                                .attr('d', function () {
+                                    return line([{
+                                            x: d.fx,
+                                            y: d.fy
+                                        },
+                                        {
+                                            x: elem.attributes.tx.value,
+                                            y: elem.attributes.ty.value
+                                        }
+                                    ]);
+                                })
+                        });*/
+        }
+
+        private dragLinkHead() { // get target
+            /*var curElem = d3.select(this),
+                x = (Number(curElem.attr('cx')) + Number(d3.event.dx)).toFixed(2),
+                y = (Number(curElem.attr('cy')) + Number(d3.event.dy)).toFixed(2);
+
+            curElem
+                .attr('cx', x)
+                .attr('cy', y);
+
+            if (this.attributes.type.value == 'end') {
+                d3.select('.circleHead[type=start]').remove();
+                d3.select(selectedLink)
+                    .attr('d', function () {
+                        return line([{
+                                x: selectedLink.attributes.sx.value,
+                                y: selectedLink.attributes.sy.value
+                            },
+                            {
+                                x: x,
+                                y: y
+                            }
+                        ]);
+                    });
+            } else {
+                d3.select('.circleHead[type=end]').remove();
+                d3.select(selectedLink)
+                    .attr('d', function () {
+                        return line([{
+                                x: x,
+                                y: y
+                            },
+                            {
+                                x: selectedLink.attributes.tx.value,
+                                y: selectedLink.attributes.ty.value
+                            }
+                        ]);
+                    });
+            }*/
+        }
+
+        private onLinkClick(d) {
+            this.removeLinkSelections();
+
+            var dragLinkHeadVar = d3.behavior.drag()
+                .origin(Object)
+                .on("dragstart", function (draged) {
+                    d3.event['sourceEvent'].stopPropagation();
+                    // get target
+                    //d3.select(this).attr( 'pointer-events', 'none');
+                    //this.startPointOfHead.x = Number(d3.select(this).attr('cx'));
+                    //this.startPointOfHead.y = Number(d3.select(this).attr('cy'));
+                    //this.isDragLinkHead = true;
+                    //this.dragedCircle = this;
+                })
+                .on("dragend", (draged) => {
+                    this.isDragLinkHead = false;
+                    var curLink = d3.select(this.selectedLink);
+                    /*
+                           if (this.endPointOfHead.x != null && this.endPointOfHead.y != null) {
+                           		d.source.children = _.without(d.source.children, d.target);
+
+                           		if (this.attributes.type.value == 'end') {
+                           			if (d.source.id != this.newNode.id && _.findIndex(d.source.children, (o: any) => { return o.id == this.newNode.id; }) < 0) 
+                           			{
+                           				d.source.children.push(this.newNode);
+                           				d.target = this.newNode;
+
+                           				curLink
+                           					.attr('d', () => {
+                           						return this.line([
+                           							{x: this.selectedLink.attributes.sx.value, y: this.selectedLink.attributes.sy.value}, 
+                           							{x: this.endPointOfHead.x, y: this.endPointOfHead.y}
+                           						]);
+                           					})
+                           					.attr('tx', this.endPointOfHead.x)
+                           					.attr('ty', this.endPointOfHead.y)
+                           					.attr('class', function() {
+                           						return 'link arrow selected to-' + this.newNode.id + ' from-' + d.source.id;
+                           					});
+
+                           				drawHeadCircles();
+                           			} else {
+                           				// Remove link
+                           				curLink.remove();
+                           				d3.selectAll('.circleHead').remove();
+                           			}
+                           		} else {
+
+                           			if (d.target.id != newGoal.id && _.findIndex(newGoal.children, function(o) { return o.id == d.target.id; }) < 0) 
+                           			{
+                           				newGoal.children = newGoal.children || [];
+                           				newGoal.children.push(d.target);
+                           				d.source = newGoal;
+
+                           				curLink
+                           					.attr('d', () => {
+                           						return line([
+                           							{x: endPointOfHead.x, y: endPointOfHead.y}, 
+                           							{x: selectedLink.attributes.tx.value, y: selectedLink.attributes.ty.value}
+                           						]);
+                           					})
+                           					.attr('sx', endPointOfHead.x)
+                           					.attr('sy', endPointOfHead.y)
+                           					.attr('class', function() {
+                           						return 'link arrow selected to-' + d.target.id + ' from-' + newGoal.id;
+                           					});
+
+                           				drawHeadCircles();
+                           			} else {
+										// Remove link
+                           				curLink.remove();
+                           				d3.selectAll('.circleHead').remove();
+                           			}
+                           		}
+                           } else {
+                           		curLink
+                           			.attr('d', function() {
+                           				return line([
+                           					{x: selectedLink.attributes.sx.value, y: selectedLink.attributes.sy.value}, 
+                           					{x: selectedLink.attributes.tx.value, y: selectedLink.attributes.ty.value}
+                           				]);
+                           			});
+
+                           		drawHeadCircles();
+                           }
+
+                           d3.select('.node.hover').classed('hover', false).classed('red', false);
+                           d3.select(this).attr( 'pointer-events', '' );
+                           dragedCircle = null;*/
+                })
+                .on("drag", dragLinkHead);
+
+            const drawHeadCircles = () => {
+                d3.selectAll('.circleHead')
+                    .remove();
+
+                this.svg
+                    .append('circle')
+                    .attr('class', 'circleHead')
+                    .attr('r', 10)
+                    .attr('type', 'end')
+                    .attr('cx', this.selectedLink.getPointAtLength(this.selectedLink.getTotalLength() - 42).x)
+                    .attr('cy', this.selectedLink.getPointAtLength(this.selectedLink.getTotalLength() - 42).y)
+                    .call(dragLinkHeadVar);
+
+                this.svg
+                    .append('circle')
+                    .attr('class', 'circleHead')
+                    .attr('r', 10)
+                    .attr('type', 'start')
+                    .attr('cx', this.selectedLink.getPointAtLength(42).x)
+                    .attr('cy', this.selectedLink.getPointAtLength(42).y)
+                    .call(dragLinkHeadVar);
+            }
+
+            var curElem = d3.select(this.parentNode), // get target
+                attrs = curElem[0][0].attributes;
+
+            this.selectedLink = this;
+            drawHeadCircles();
+
+            curElem
+                .select("path.link")
+                .classed('selected', true)
+                .attr('marker-end', 'url(#arrowSelected)');
         }
 
         private centerNode(source: any) {
