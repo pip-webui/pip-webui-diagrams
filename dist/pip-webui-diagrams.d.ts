@@ -1,0 +1,6 @@
+declare module pip.diagrams {
+
+
+
+}
+

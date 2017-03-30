@@ -4,5 +4,6 @@
 /// <reference path="angular-ui-router/angular-ui-router.d.ts" />
 /// <reference path="angular-material/angular-material.d.ts" />
 /// <reference path="core-js/core-js.d.ts" />
-/// <reference path="../../pip-webui-layouts/dist/pip-webui-layouts.d.ts" />
+/// <reference path="d3/d3.d.ts" />
+/// <reference path="nvd3/nvd3.d.ts" />
 

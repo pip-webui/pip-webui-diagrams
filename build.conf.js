@@ -18,13 +18,13 @@ module.exports = {
     },
     browserify: {
         entries: [
-            './src/index.ts',
-            './temp/pip-webui-diagrams-html.min.js',
+            './src/index.ts'//,
+            //'./temp/pip-webui-diagrams-html.min.js',
         ]
     }, 
     file: {
         lib: [
-            //'../pip-webui-lib/dist/**/*',
+            '../pip-webui-lib/dist/**/*',
             '../pip-webui-css/dist/**/*',
             '../pip-webui-services/dist/**/*',
             //'../pip-webui-controls/dist/**/*',

@@ -1,0 +1,89 @@
+.node {
+  cursor: pointer;
+
+  .substrate {
+    fill: #00897B;
+  }
+
+  input {
+    padding: 0 8px;
+    box-sizing: border-box;
+    border: none;
+    background-color: $color-window;
+    font: $font-body2;
+  }
+
+  .text-substrate {
+    fill: $color-window;
+  }
+
+  &.hover {
+    .goal-avatar {
+      transition: stroke-width 0.4s;
+      stroke: #66BB6A;
+      stroke-width: 4px;
+    }
+  }
+
+  &.hover.red {
+    .goal-avatar {
+      transition: stroke-width 0.4s;
+      stroke: #F44336;
+      stroke-width: 4px;
+    }
+  }
+
+  &.selected {
+    .goal-avatar {
+      stroke: #66BB6A;
+      stroke-width: 4px;
+    }
+
+    .text-substrate {
+      fill: $color-content;
+    }
+
+    input {
+      padding: 8px;
+      background-color: $color-content;
+      box-shadow: $box-shadow;
+    }
+  }
+
+  .goal-action {
+    fill: $color-content;
+  }
+}
+
+.node text {
+  font: $font-body2;
+  background-color: #00897B;
+}
+
+.link {
+  fill: none;
+  stroke: #00897B;
+  stroke-width: 3px;
+  cursor: pointer;
+
+  &.selected {
+    stroke: #66BB6A;
+    cursor: default;
+  }
+}
+
+.arrowHead {
+  fill: #00897B;
+  stroke: #00897B;
+}
+
+.arrowSelectedHead {
+  fill: #66BB6A;
+  stroke: #66BB6A;
+}
+
+.circleHead {
+  fill: #66BB6A;
+  stroke: #66BB6A;
+  cursor: pointer;
+}

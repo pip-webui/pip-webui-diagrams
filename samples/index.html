@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>WebUI Diagrams Sample</title>
+
+    <!-- Library .css files -->
+    <link rel="stylesheet" href="../lib/pip-webui-lib.css"/>
+    <link rel="stylesheet" href="../lib/pip-webui-lib-optional.css"/>
+    <link rel="stylesheet" href="../lib/pip-webui-css.css"/>
+    <link rel="stylesheet" href="../lib/pip-webui-layouts.css"/>
+
+    <link rel="stylesheet" href="../dist/pip-webui-diagrams.css"/>
+
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700,400italic">
+
+    <link rel="stylesheet" href="samples.css">
+
+    <!-- Libarary .js files -->
+    <script src="../lib/pip-webui-lib.js"></script>
+    <script src="../lib/pip-webui-lib-optional.js"></script>
+    <script src="../lib/pip-webui-layouts.js"></script>
+    <script src="../dist/pip-webui-diagrams.js"></script>
+    <script src="../lib/pip-webui-services.js"></script>
+
+    <!-- Samples .js files -->
+    <script src="index.js"></script>
+    <script src="MindMapSample.js"></script>
+</head>
+<body ng-app="app.Diagrams" ng-class="{'pip-windows': browser == 'chrome'}" 
+      class="layout-column layout-align-start-center" ng-controller="samplesMainController">
+<md-toolbar>
+    <div class="md-toolbar-tools">
+        <md-button class="md-icon-button" aria-label="menu"
+                   ng-click="onToggleMenu()">
+            <md-icon md-svg-icon="icons:menu"></md-icon>
+        </md-button>
+        <div class="flex-var text-overflow">{{ title }}</span></div>
+    </div>
+</md-toolbar>
+
+<div class="layout-row flex" style="width: 100%">
+    <md-sidenav md-component-id="left"
+                class="md-whiteframe-z2 md-sidenav-left layout-column">
+        <md-list>
+            <md-list-item ng-repeat="contentItem in content"
+                          ng-click="onSwitchPage(contentItem.name)"
+                          ng-class="{ 'selected-state': isActiveState(contentItem.name) }">
+                <md-icon md-svg-icon="icons:{{ contentItem.icon }}"></md-icon><p ui-sref="{{contentItem.name}}">{{contentItem.title}}</p>
+            </md-list-item>
+        </md-list>
+    </md-sidenav>
+
+    <md-content id="content" class="flex" ui-view>
+    </md-content>
+</div>
+
+</body>
+</html>

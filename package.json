@@ -1,8 +1,8 @@
 {
-    "name":  "pip-webui-dashboard",
+    "name":  "pip-webui-diagrams",
     "version":  "2.0.0",
     "author":  "Conceptual Vision Consulting LLC",
-    "description":  "Dashboard for Pip.WebUI",
+    "description":  "Diagrams for Pip.WebUI",
     "contributors":  [
                          {
                              "name":  "Sergey Seroukhov",
@@ -18,7 +18,7 @@
                      "webui",
                      "framework",
                      "controls",
-                     "dashboard"
+                     "diagrams"
                  ],
     "noAnalyze":  true,
     "license":  "MIT",
