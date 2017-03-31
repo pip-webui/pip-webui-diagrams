@@ -95,7 +95,7 @@ input:focus, p:focus, div:focus, li:focus, md-list-item:focus, md-list:focus, a:
 .node {
   cursor: pointer; }
   .node .substrate {
-    fill: #00897B; }
+    fill: #00897B !important; }
   .node input {
     padding: 0 8px;
     box-sizing: border-box;

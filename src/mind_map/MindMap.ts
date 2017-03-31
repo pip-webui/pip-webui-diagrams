@@ -56,9 +56,11 @@
             this.zoomListener = d3.behavior.zoom().scaleExtent([0.2, 2.5]).on('zoom', () => {
                 this.zoom();
             });
+
+            this.initComponent();
         }
 
-        public $onInit() {
+        public initComponent() {
             this.parent = this.$element.parent();
             this.height = this.parent.height();
             this.width = this.parent.width();
@@ -66,19 +68,29 @@
             this.initSvg();
             this.initArrowMarkers();
             this.initShadowFilter();
+            this.initCommonVars();
 
-            // Init coordinates for root element TODO: maybe move to function
+            if (!this.data || !_.isArray(this.data)) return;
+
+            this.setRoot();
+            this.update(this.root);
+            this.centerNode(this.root);
+            d3.select(self.frameElement).style("height", "500px");
+        }
+
+        private setRoot() {
+            // Init coordinates for root element
             this.root = this.data[0];
             this.root.x0 = this.height / 2;
             this.root.y0 = 0;
-
-            this.centerNode(this.root);
-            d3.select(self.frameElement).style("height", "500px");
         }
 
         public $onChanges(changes: MindMapBindingsChanges) {
             if (changes.data && changes.data.currentValue !== changes.data.previousValue) {
                 this.data = changes.data.currentValue;
+                this.setRoot();
+                this.update(this.root);
+                this.centerNode(this.root);
             }
         }
 
@@ -152,7 +164,29 @@
                 .attr('mode', 'normal');
         }
 
+        private initCommonVars() {
+            this.tree = d3.layout.tree()
+                .size([this.viewerWidth, this.viewerHeight])
+                .nodeSize([50, 600])
+                .separation(function (a, b) {
+                    return (a.parent == b.parent ? 1 : 2) / a.depth;
+                });
+
+            this.line = d3.svg.line()
+                .x(function (d: any) {
+                    return d.x;
+                })
+                .y(function (d: any) {
+                    return d.y;
+                })
+                .interpolate('linear');
+
+                console.log();
+        }
+
         private update(source: any) {
+            if (!this.tree) return;
+
             const updatePoints = () => {
                 _.each(nodes, (d) => {
                     if (d.fx && d.fy) {
@@ -180,6 +214,14 @@
                     });
             }
 
+            const getTransform = (d) => {
+                if (d.userDragged) {
+                    return "translate(" + d.x + "," + d.y + ")";
+                } else {
+                    return "rotate(" + (d.x - 90) + ")translate(" + d.y + ", 0)";
+                }
+            }
+
             // Compute the new tree layout
             const nodes = this.tree.nodes(this.root).reverse(),
                 links = this.tree.links(nodes);
@@ -189,7 +231,6 @@
                 .data(nodes, (d) => {
                     return d.id || (d.id = ++this.i);
                 });
-
             updatePoints();
 
             const dragNodeVar = d3.behavior.drag()
@@ -210,14 +251,14 @@
             // Enter any new nodes at the parent's previous position.
             const nodeEnter = node.enter().append("g")
                 .attr("class", "node")
-                .attr("transform", function (d) {
+                .attr("transform", (d) => {
                     return getTransform(source);
                 })
                 .on("dblclick", (d) => {
-                    this.dblclick(d);
+                    this.dblclickNode(d);
                 })
                 .on("click", (d) => {
-                    this.click(d);
+                    this.clickNode(d);
                 })
                 .on("mouseover", (d) => {
                     this.mouseoverNode(d);
@@ -316,20 +357,6 @@
                     return (d.bbox.height) + 'px'
                 });
 
-            const getBB = (selection) => {
-                _.each(selection, (d) => {
-                    d.bbox = this.getBBox();
-                })
-            }
-
-            const getTransform = (d) => {
-                if (d.userDragged) {
-                    return "translate(" + d.x + "," + d.y + ")";
-                } else {
-                    return "rotate(" + (d.x - 90) + ")translate(" + d.y + ", 0)";
-                }
-            }
-
             // Transition nodes to their new position.
             const nodeUpdate = node.transition()
                 .duration(this.duration)
@@ -423,8 +450,8 @@
                 .transition()
                 .duration(this.duration)
                 .select("path.link")
-                .each('end', function (l, i) {
-                    d3.select(this)
+                .each('end', (l, i) => {
+                    d3.select(d3.selectAll('path.link')[0][i])
                         .attr({
                             "d": (d) => {
                                 return this.line(
@@ -468,7 +495,7 @@
             });
         }
 
-        private dblclick(d) {
+        private dblclickNode(d) {
             this.removeLinkSelections();
             d3.event['stopPropagation']();
 
@@ -503,24 +530,24 @@
                     x: 0,
                     y: 55
                 }],
-                curElement = d3.select(element);
+                curElement = d3.select($(element).parent('.node').get(0));
 
             curElement
                 .attr('class', 'node selected')
                 .select('.input-object')
-                .attr("width", function (d) {
+                .attr("width", (d) => {
                     return Math.min(d.bbox.width + 16, 250)
                 })
-                .attr("height", function (d) {
+                .attr("height", (d) => {
                     return d.bbox.height + 16
                 })
                 .attr("y", -19)
                 .select('input')
-                .attr('disabled', null)
-                .style("width", function (d) {
+                .attr('disabled', false)
+                .style("width", (d) => {
                     return Math.min(d.bbox.width + 16, 250) + 'px'
                 })
-                .style("height", function (d) {
+                .style("height", (d) => {
                     return (d.bbox.height + 16) + 'px'
                 });
 
@@ -548,7 +575,7 @@
         }
 
         private hideNodeActions(element, d) {
-            var curElement = d3.select(element);
+            var curElement = d3.select($(element).parent('.node').get(0));
 
             curElement
                 .attr('class', 'node')
@@ -579,13 +606,12 @@
             d.nodeSelected = false;
         }
 
-        private click(d) {
+        private clickNode(d) {
             this.removeLinkSelections();
-
             if (d.dragThisTime) return;
 
             d.clicked = !d.clicked;
-            d.clicked ? this.showNodeActions(this, d) : this.hideNodeActions(this, d);
+            d.clicked ? this.showNodeActions(d3.event['target'], d) : this.hideNodeActions(d3.event['target'], d);
         }
 
         private onNodeTextClick(d) {
@@ -610,19 +636,13 @@
         private onChangeNodeName(d) { // get target
             //const curElement = d3.select(/*this.parentNode.parentNode*/);
 
-            const getBB = (selection) => {
-                selection.each(function (d) {
-                    d.bbox = this.getBBox();
-                })
-            }
-
             //d.title = this.value;
             /*
                         curElement
                             .select('text')
                             .style('display', null)
                             .text(d.title)
-                            .call(getBB)
+                            .call(this.getBB)
                             .style('display', 'none');
 
                         curElement
@@ -874,7 +894,9 @@
                            d3.select(this).attr( 'pointer-events', '' );
                            dragedCircle = null;*/
                 })
-                .on("drag", dragLinkHead);
+                .on("drag", () => {
+                    this.dragLinkHead();
+                });
 
             const drawHeadCircles = () => {
                 d3.selectAll('.circleHead')
@@ -899,16 +921,22 @@
                     .call(dragLinkHeadVar);
             }
 
-            var curElem = d3.select(this.parentNode), // get target
-                attrs = curElem[0][0].attributes;
+            //var curElem = d3.select(this.parentNode), // get target
+            //    attrs = curElem[0][0].attributes;
 
             this.selectedLink = this;
             drawHeadCircles();
 
-            curElem
+            /*curElem
                 .select("path.link")
                 .classed('selected', true)
-                .attr('marker-end', 'url(#arrowSelected)');
+                .attr('marker-end', 'url(#arrowSelected)');*/
+        }
+
+        private getBB(selection) {
+            selection.each(function (d) {
+                d.bbox = this.getBBox();
+            })
         }
 
         private centerNode(source: any) {
